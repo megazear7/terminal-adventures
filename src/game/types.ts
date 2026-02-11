@@ -11,6 +11,7 @@ export const RoomSchema = z.object({
 export const GameStateSchema = z.object({
   currentRoom: z.string(),
   inventory: z.array(z.string()).default([]),
+  roomItems: z.record(z.string(), z.array(z.string())).default({}),
 });
 
 export type Room = z.infer<typeof RoomSchema>;

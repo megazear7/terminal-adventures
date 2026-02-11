@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { rooms } from './rooms.js';
-import { getState, updateState } from './state.js';
+import { getState, updateState, saveGame, loadGame } from './state.js';
 
 export async function startGame() {
   console.clear();
@@ -38,6 +38,10 @@ export async function startGame() {
       });
     }
 
+    // Add save/load options
+    choices.push({ name: 'Save game', value: 'save' });
+    choices.push({ name: 'Load game', value: 'load' });
+
     choices.push({ name: 'Quit', value: 'quit' });
 
     const { action } = await inquirer.prompt([
@@ -62,6 +66,42 @@ export async function startGame() {
         console.log(chalk.gray('Your inventory is empty.'));
       }
       continue; // Stay in the same room
+    }
+
+    if (action === 'save') {
+      const { fileName } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'fileName',
+          message: 'Enter save file name (default: save.json):',
+          default: 'save.json',
+        },
+      ]);
+      try {
+        await saveGame(fileName);
+        console.log(chalk.green(`Game saved to ${fileName}`));
+      } catch (error) {
+        console.log(chalk.red(`Failed to save: ${error.message}`));
+      }
+      continue;
+    }
+
+    if (action === 'load') {
+      const { fileName } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'fileName',
+          message: 'Enter save file name to load (default: save.json):',
+          default: 'save.json',
+        },
+      ]);
+      try {
+        await loadGame(fileName);
+        console.log(chalk.green(`Game loaded from ${fileName}`));
+      } catch (error) {
+        console.log(chalk.red(`Failed to load: ${error.message}`));
+      }
+      continue;
     }
 
     if (action.startsWith('take:')) {

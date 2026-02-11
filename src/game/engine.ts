@@ -3,9 +3,63 @@ import chalk from 'chalk';
 import { rooms } from './rooms.js';
 import { getState, updateState, saveGame, loadGame } from './state.js';
 
+function randomDamage(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+async function doCombat(monster: { name: string; health: number; attack: number }) {
+  let monsterHealth = monster.health;
+  console.log(chalk.red(`\nA ${monster.name} appears! Combat begins!`));
+
+  while (monsterHealth > 0) {
+    const state = getState();
+    console.log(chalk.yellow(`\nYour health: ${state.health} | ${monster.name} health: ${monsterHealth}`));
+
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'What do you do?',
+        choices: [
+          { name: 'Attack', value: 'attack' },
+          { name: 'Flee', value: 'flee' },
+        ],
+      },
+    ]);
+
+    if (action === 'flee') {
+      console.log(chalk.blue('You flee back to the previous room!'));
+      return false; // Fled
+    }
+
+    if (action === 'attack') {
+      const damage = randomDamage(1, 3);
+      monsterHealth -= damage;
+      console.log(chalk.green(`You attack the ${monster.name} for ${damage} damage!`));
+
+      if (monsterHealth <= 0) {
+        console.log(chalk.green(`You defeated the ${monster.name}!`));
+        return true; // Won
+      }
+
+      // Monster attacks
+      const monsterDamage = randomDamage(1, monster.attack);
+      updateState({ health: state.health - monsterDamage });
+      console.log(chalk.red(`The ${monster.name} attacks you for ${monsterDamage} damage!`));
+
+      if (getState().health <= 0) {
+        console.log(chalk.red('You have been defeated! Game over.'));
+        return 'dead'; // Dead
+      }
+    }
+  }
+}
+
 export async function startGame() {
   console.clear();
   console.log(chalk.bold.green('=== Terminal Adventure ===\n'));
+
+  let previousRoom = 'cave';
 
   while (true) {
     const state = getState();
@@ -13,6 +67,7 @@ export async function startGame() {
 
     console.log(chalk.bold.blue(`\n${room.name}`));
     console.log(chalk.gray(room.description));
+    console.log(chalk.cyan(`Your health: ${state.health}`));
 
     if (room.items && room.items.length > 0) {
       console.log(chalk.yellow(`Items here: ${room.items.join(', ')}`));
@@ -21,6 +76,24 @@ export async function startGame() {
     if (state.currentRoom === 'treasure') {
       console.log(chalk.bold.magenta('\n🎉 You win! You found the treasure!'));
       break;
+    }
+
+    if (state.health <= 0) {
+      console.log(chalk.red('\n💀 You have died. Game over.'));
+      break;
+    }
+
+    // Check for monster
+    if (room.monster) {
+      const result = await doCombat(room.monster);
+      if (result === false) { // Fled
+        updateState({ currentRoom: previousRoom });
+        continue;
+      } else if (result === 'dead') {
+        break;
+      } else if (result === true) { // Won
+        room.monster = undefined;
+      }
     }
 
     const choices = Object.keys(room.exits).map(dir => ({
@@ -122,6 +195,7 @@ export async function startGame() {
 
     const nextRoom = room.exits[action];
     if (nextRoom) {
+      previousRoom = state.currentRoom;
       updateState({ currentRoom: nextRoom });
     } else {
       console.log(chalk.red('Invalid action!'));

@@ -21,6 +21,7 @@ export const rooms: Record<string, Room> = {
     description: 'A tight tunnel leads deeper into the mountain.',
     exits: { west: 'cave', east: 'treasure' },
     items: [],
+    monster: { name: 'Goblin', health: 5, attack: 2 },
   },
   treasure: {
     id: 'treasure',

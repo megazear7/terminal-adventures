@@ -6,6 +6,7 @@ let state: GameState = {
   currentRoom: 'cave',
   inventory: [],
   roomItems: {},
+  health: 10,
 };
 
 export function getState(): GameState {
@@ -22,7 +23,7 @@ export function resetState() {
   for (const [id, room] of Object.entries(rooms)) {
     initialRoomItems[id] = [...(room.items || [])];
   }
-  state = { currentRoom: 'cave', inventory: [], roomItems: initialRoomItems };
+  state = { currentRoom: 'cave', inventory: [], roomItems: initialRoomItems, health: 10 };
   // Also set the rooms items
   for (const [id, items] of Object.entries(initialRoomItems)) {
     rooms[id].items = [...items];

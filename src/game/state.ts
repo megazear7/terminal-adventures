@@ -53,6 +53,6 @@ export async function loadGame(filePath: string = 'save.json') {
       }
     }
   } catch (error) {
-    throw new Error(`Failed to load game: ${error.message}`);
+    throw new Error(`Failed to load game: ${(error as Error).message}`);
   }
 }

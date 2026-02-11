@@ -154,7 +154,7 @@ export async function startGame() {
         await saveGame(fileName);
         console.log(chalk.green(`Game saved to ${fileName}`));
       } catch (error) {
-        console.log(chalk.red(`Failed to save: ${error.message}`));
+        console.log(chalk.red(`Failed to save: ${(error as Error).message}`));
       }
       continue;
     }
@@ -172,7 +172,7 @@ export async function startGame() {
         await loadGame(fileName);
         console.log(chalk.green(`Game loaded from ${fileName}`));
       } catch (error) {
-        console.log(chalk.red(`Failed to load: ${error.message}`));
+        console.log(chalk.red(`Failed to load: ${(error as Error).message}`));
       }
       continue;
     }

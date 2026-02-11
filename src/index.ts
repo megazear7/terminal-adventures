@@ -9,7 +9,7 @@ async function main() {
       await loadGame(options.load);
       console.log(`Loaded game from ${options.load}`);
     } catch (error) {
-      console.error(`Error loading game: ${error.message}`);
+      console.error(`Error loading game: ${(error as Error).message}`);
       process.exit(1);
     }
   }

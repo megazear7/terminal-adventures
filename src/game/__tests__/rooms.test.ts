@@ -7,6 +7,11 @@ describe('Rooms', () => {
     expect(rooms.forest).toBeDefined();
     expect(rooms.tunnel).toBeDefined();
     expect(rooms.treasure).toBeDefined();
+    expect(rooms.clearing).toBeDefined();
+    expect(rooms.river).toBeDefined();
+    expect(rooms.mountain).toBeDefined();
+    expect(rooms.peak).toBeDefined();
+    expect(rooms.secret).toBeDefined();
   });
 
   it('should have correct cave structure', () => {
@@ -34,5 +39,24 @@ describe('Rooms', () => {
     expect(hidden.items).toEqual(['ancient_key']);
     expect(hidden.monster).toEqual({ name: 'Ghost', health: 10, attack: 3 });
     expect(hidden.requiresLight).toBe(true);
+  });
+
+  it('should have correct forest clearing', () => {
+    const clearing = rooms.clearing;
+    expect(clearing.id).toBe('clearing');
+    expect(clearing.name).toBe('Forest Clearing');
+    expect(clearing.exits).toEqual({ south: 'forest', east: 'river' });
+    expect(clearing.items).toEqual(['healing_herb']);
+    expect(clearing.requiresLight).toBe(false);
+  });
+
+  it('should have correct mountain path', () => {
+    const mountain = rooms.mountain;
+    expect(mountain.id).toBe('mountain');
+    expect(mountain.name).toBe('Mountain Path');
+    expect(mountain.exits).toEqual({ north: 'river', east: 'peak' });
+    expect(mountain.items).toEqual(['rope']);
+    expect(mountain.monster).toEqual({ name: 'Mountain Goat', health: 8, attack: 2 });
+    expect(mountain.requiresLight).toBe(false);
   });
 });

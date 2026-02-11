@@ -56,6 +56,34 @@ async function processCommands(commands: string[]) {
       }
     }
 
+    // Check for different endings
+    if (state.currentRoom === 'treasure') {
+      const hasAncientKey = state.inventory.includes('ancient_key');
+      const hasBinoculars = state.inventory.includes('binoculars');
+      const hasScroll = state.inventory.includes('ancient_scroll');
+      
+      if (hasAncientKey && hasBinoculars && hasScroll) {
+        console.log(chalk.bold.magenta('\n🏆 LEGENDARY EXPLORER! 🏆'));
+        console.log(chalk.magenta('You have collected all the ancient artifacts and conquered the mountain peak!'));
+        console.log(chalk.magenta('Your name will be remembered in legends for generations!'));
+      } else if (hasAncientKey && hasBinoculars) {
+        console.log(chalk.bold.green('\n🎉 MASTER EXPLORER! 🎉'));
+        console.log(chalk.green('You conquered the mountain and defeated the ancient guardian!'));
+        console.log(chalk.green('The treasure is yours, and the valley is at peace.'));
+      } else {
+        console.log(chalk.bold.yellow('\n🎉 You win! You found the treasure!'));
+        console.log(chalk.yellow('But there may be more adventures waiting in this vast world...'));
+      }
+      break;
+    }
+
+    if (state.currentRoom === 'secret') {
+      console.log(chalk.bold.cyan('\n🔍 ANCIENT SCHOLAR! 🔍'));
+      console.log(chalk.cyan('You discovered the lost civilization\'s secrets!'));
+      console.log(chalk.cyan('The ancient scroll reveals the location of even greater treasures...'));
+      break;
+    }
+
     // Process command
     const action = parseCommand(command);
     if (!action) {
@@ -115,6 +143,18 @@ async function processCommands(commands: string[]) {
         }
       } else {
         console.log(chalk.red(`You don't have a ${item}.`));
+      }
+      continue;
+    }
+
+    // Handle special movement cases
+    if (action === 'south' && state.currentRoom === 'river') {
+      if (state.inventory.includes('rope')) {
+        console.log(chalk.blue('You use the rope to secure yourself and cross the river safely.'));
+        previousRoom = state.currentRoom;
+        updateState({ currentRoom: 'mountain' });
+      } else {
+        console.log(chalk.red('The river is too swift and deep to cross without proper equipment. You need something to help you cross safely.'));
       }
       continue;
     }
@@ -306,6 +346,34 @@ export async function startGame(options: { demo?: boolean; commands?: string[] }
       } else if (result === true) { // Won
         room.monster = undefined;
       }
+    }
+
+    // Check for different endings
+    if (state.currentRoom === 'treasure') {
+      const hasAncientKey = state.inventory.includes('ancient_key');
+      const hasBinoculars = state.inventory.includes('binoculars');
+      const hasScroll = state.inventory.includes('ancient_scroll');
+      
+      if (hasAncientKey && hasBinoculars && hasScroll) {
+        console.log(chalk.bold.magenta('\n🏆 LEGENDARY EXPLORER! 🏆'));
+        console.log(chalk.magenta('You have collected all the ancient artifacts and conquered the mountain peak!'));
+        console.log(chalk.magenta('Your name will be remembered in legends for generations!'));
+      } else if (hasAncientKey && hasBinoculars) {
+        console.log(chalk.bold.green('\n🎉 MASTER EXPLORER! 🎉'));
+        console.log(chalk.green('You conquered the mountain and defeated the ancient guardian!'));
+        console.log(chalk.green('The treasure is yours, and the valley is at peace.'));
+      } else {
+        console.log(chalk.bold.yellow('\n🎉 You win! You found the treasure!'));
+        console.log(chalk.yellow('But there may be more adventures waiting in this vast world...'));
+      }
+      break;
+    }
+
+    if (state.currentRoom === 'secret') {
+      console.log(chalk.bold.cyan('\n🔍 ANCIENT SCHOLAR! 🔍'));
+      console.log(chalk.cyan('You discovered the lost civilization\'s secrets!'));
+      console.log(chalk.cyan('The ancient scroll reveals the location of even greater treasures...'));
+      break;
     }
 
     const choices = Object.keys(room.exits).map(dir => ({

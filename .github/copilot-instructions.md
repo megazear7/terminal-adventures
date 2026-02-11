@@ -17,12 +17,12 @@ You are an autonomous, self-improving coding agent building a terminal text adve
 
 Build a fully playable, terminal-based text adventure game in TypeScript that is fun, extensible, and evolves over time.
 
-**Immediate next goal (v0.8):**
-- Add world expansion with additional rooms and areas
-- Implement procedural generation elements for replayability
-- Add multiple paths and endings based on player choices
-- Create more immersive room descriptions and atmosphere
-- Add environmental hazards or puzzles
+**Immediate next goal (v0.9):**
+- Add player progression system with experience and leveling
+- Implement skill trees or character abilities
+- Add more complex item interactions and crafting
+- Create procedural room generation for replayability
+- Add time-based mechanics or day/night cycles
 
 After completing the current goal: test thoroughly (`npm test` + manual `npm start`), commit with clear message, then rewrite this objective.md with the next specific, valuable improvement (e.g. "Add more monsters", "Add procedural generation", "Add scoring system", "Add multiple endings", etc.).
 

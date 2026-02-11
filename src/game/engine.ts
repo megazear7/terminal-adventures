@@ -7,7 +7,36 @@ function randomDamage(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-async function doCombat(monster: { name: string; health: number; attack: number }) {
+function getDemoChoice(choices: any[], state: any, room: any): string {
+  // Simple demo logic
+  if (room.items && room.items.includes('torch')) {
+    return 'take:torch';
+  }
+  if (state.currentRoom === 'cave' && choices.some(c => c.value === 'east')) {
+    return 'east';
+  }
+  if (state.currentRoom === 'tunnel' && choices.some(c => c.value === 'west')) {
+    return 'west';
+  }
+  if (state.currentRoom === 'cave' && choices.some(c => c.value === 'north')) {
+    return 'north';
+  }
+  if (state.currentRoom === 'forest' && choices.some(c => c.value === 'inventory')) {
+    return 'inventory';
+  }
+  if (state.currentRoom === 'forest' && choices.some(c => c.value === 'south')) {
+    return 'south';
+  }
+  if (state.currentRoom === 'cave' && choices.some(c => c.value === 'east')) {
+    return 'east';
+  }
+  if (state.currentRoom === 'tunnel' && choices.some(c => c.value === 'east')) {
+    return 'east';
+  }
+  return 'quit'; // Default to quit
+}
+
+async function doCombat(monster: { name: string; health: number; attack: number }, options: { demo?: boolean } = {}) {
   let monsterHealth = monster.health;
   console.log(chalk.red(`\nA ${monster.name} appears! Combat begins!`));
 
@@ -15,17 +44,19 @@ async function doCombat(monster: { name: string; health: number; attack: number 
     const state = getState();
     console.log(chalk.yellow(`\nYour health: ${state.health} | ${monster.name} health: ${monsterHealth}`));
 
-    const { action } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'action',
-        message: 'What do you do?',
-        choices: [
-          { name: 'Attack', value: 'attack' },
-          { name: 'Flee', value: 'flee' },
-        ],
-      },
-    ]);
+    const { action } = options.demo 
+      ? { action: 'attack' } // Always attack in demo
+      : await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'action',
+            message: 'What do you do?',
+            choices: [
+              { name: 'Attack', value: 'attack' },
+              { name: 'Flee', value: 'flee' },
+            ],
+          },
+        ]);
 
     if (action === 'flee') {
       console.log(chalk.blue('You flee back to the previous room!'));
@@ -55,7 +86,7 @@ async function doCombat(monster: { name: string; health: number; attack: number 
   }
 }
 
-export async function startGame() {
+export async function startGame(options: { demo?: boolean } = {}) {
   console.clear();
   console.log(chalk.bold.green('=== Terminal Adventure ===\n'));
 
@@ -85,7 +116,7 @@ export async function startGame() {
 
     // Check for monster
     if (room.monster) {
-      const result = await doCombat(room.monster);
+      const result = await doCombat(room.monster, options);
       if (result === false) { // Fled
         updateState({ currentRoom: previousRoom });
         continue;
@@ -117,14 +148,16 @@ export async function startGame() {
 
     choices.push({ name: 'Quit', value: 'quit' });
 
-    const { action } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'action',
-        message: 'What do you do?',
-        choices,
-      },
-    ]);
+    const { action } = options.demo 
+      ? { action: getDemoChoice(choices, state, room) }
+      : await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'action',
+            message: 'What do you do?',
+            choices,
+          },
+        ]);
 
     if (action === 'quit') {
       console.log(chalk.red('Goodbye!'));
@@ -142,37 +175,47 @@ export async function startGame() {
     }
 
     if (action === 'save') {
-      const { fileName } = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'fileName',
-          message: 'Enter save file name (default: save.json):',
-          default: 'save.json',
-        },
-      ]);
-      try {
-        await saveGame(fileName);
-        console.log(chalk.green(`Game saved to ${fileName}`));
-      } catch (error) {
-        console.log(chalk.red(`Failed to save: ${(error as Error).message}`));
+      if (options.demo) {
+        await saveGame('demo-save.json');
+        console.log(chalk.green('Game saved to demo-save.json'));
+      } else {
+        const { fileName } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'fileName',
+            message: 'Enter save file name (default: save.json):',
+            default: 'save.json',
+          },
+        ]);
+        try {
+          await saveGame(fileName);
+          console.log(chalk.green(`Game saved to ${fileName}`));
+        } catch (error) {
+          console.log(chalk.red(`Failed to save: ${(error as Error).message}`));
+        }
       }
       continue;
     }
 
     if (action === 'load') {
-      const { fileName } = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'fileName',
-          message: 'Enter save file name to load (default: save.json):',
-          default: 'save.json',
-        },
-      ]);
-      try {
-        await loadGame(fileName);
-        console.log(chalk.green(`Game loaded from ${fileName}`));
-      } catch (error) {
-        console.log(chalk.red(`Failed to load: ${(error as Error).message}`));
+      if (options.demo) {
+        // Skip load in demo
+        console.log(chalk.gray('Load skipped in demo mode'));
+      } else {
+        const { fileName } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'fileName',
+            message: 'Enter save file name to load (default: save.json):',
+            default: 'save.json',
+          },
+        ]);
+        try {
+          await loadGame(fileName);
+          console.log(chalk.green(`Game loaded from ${fileName}`));
+        } catch (error) {
+          console.log(chalk.red(`Failed to load: ${(error as Error).message}`));
+        }
       }
       continue;
     }

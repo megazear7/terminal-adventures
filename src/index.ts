@@ -13,7 +13,7 @@ async function main() {
       process.exit(1);
     }
   }
-  await startGame();
+  await startGame(options);
 }
 
 main().catch(console.error);

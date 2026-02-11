@@ -30,7 +30,7 @@ export function resetState() {
   }
 }
 
-export async function saveGame(filePath: string = 'save.json') {
+export async function saveGame(filePath: string = '.game-state/save.json') {
   const stateToSave = getState();
   // Update roomItems from current rooms
   const currentRoomItems: Record<string, string[]> = {};
@@ -41,7 +41,7 @@ export async function saveGame(filePath: string = 'save.json') {
   await fs.writeFile(filePath, JSON.stringify(stateToSave, null, 2));
 }
 
-export async function loadGame(filePath: string = 'save.json') {
+export async function loadGame(filePath: string = '.game-state/save.json') {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
     const loadedState = GameStateSchema.parse(JSON.parse(data));

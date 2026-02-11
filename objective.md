@@ -2,15 +2,14 @@
 
 Build a fully playable, terminal-based text adventure game in TypeScript that is fun, extensible, and evolves over time.
 
-**Immediate next goal (v0.4):**
-- Add simple combat system with a monster in the tunnel.
-- When entering tunnel, if monster is present, trigger combat.
-- Combat: player can attack or use items (if applicable).
-- Monster has health, player has health.
-- Win combat to proceed, lose = game over.
-- Add health to GameState, monster data to rooms or separate.
-- Use chalk for combat messages.
-- Add Vitest tests for combat logic.
+**Immediate next goal (v0.5):**
+- Add non-interactive CLI interface alongside the existing interactive one.
+- Allow commands to be passed as arguments (e.g., `npm start go north`, `npm start take torch`).
+- Create .game-state/ directory for automatic save/load (add to .gitignore).
+- Auto-save game state after each command in non-interactive mode.
+- Auto-load game state on startup.
+- Both interactive and non-interactive modes should work with the same game engine.
+- Add help command and command validation.
 
 After completing the current goal: test thoroughly (`npm test` + manual `npm start`), commit with clear message, then rewrite this objective.md with the next specific, valuable improvement (e.g. "Add more rooms", "Add procedural elements", "Improve room descriptions", "Add item usage", etc.).
 

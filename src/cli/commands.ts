@@ -9,7 +9,8 @@ program
   .option('--debug', 'Enable debug mode')
   .option('--load <file>', 'Load game from JSON file')
   .option('--demo', 'Run in demo mode with automatic choices')
-  .action(async (options) => {
+  .argument('[commands...]', 'Commands to execute in non-interactive mode')
+  .action(async (commands, options) => {
     if (options.debug) console.log('Debug mode enabled');
-    // Game start is handled in index.ts
+    // Commands and options are passed to index.ts
   });

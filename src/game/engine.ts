@@ -7,6 +7,126 @@ function randomDamage(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+async function processCommands(commands: string[]) {
+  let previousRoom = 'cave';
+
+  for (const command of commands) {
+    const state = getState();
+    const room = rooms[state.currentRoom];
+
+    console.log(chalk.bold.blue(`\n${room.name}`));
+    console.log(chalk.gray(room.description));
+    console.log(chalk.cyan(`Your health: ${state.health}`));
+
+    if (room.items && room.items.length > 0) {
+      console.log(chalk.yellow(`Items here: ${room.items.join(', ')}`));
+    }
+
+    if (state.currentRoom === 'treasure') {
+      console.log(chalk.bold.magenta('\n🎉 You win! You found the treasure!'));
+      break;
+    }
+
+    if (state.health <= 0) {
+      console.log(chalk.red('\n💀 You have died. Game over.'));
+      break;
+    }
+
+    // Check for monster
+    if (room.monster) {
+      const result = await doCombat(room.monster, { demo: true }); // Always attack in non-interactive
+      if (result === false) { // Fled
+        updateState({ currentRoom: previousRoom });
+        continue;
+      } else if (result === 'dead') {
+        break;
+      } else if (result === true) { // Won
+        room.monster = undefined;
+      }
+    }
+
+    // Process command
+    const action = parseCommand(command);
+    if (!action) {
+      console.log(chalk.red(`Unknown command: ${command}`));
+      console.log(chalk.gray('Available commands: go <direction>, take <item>, inventory, save, load, quit'));
+      continue;
+    }
+
+    if (action === 'quit') {
+      console.log(chalk.red('Goodbye!'));
+      break;
+    }
+
+    if (action === 'inventory') {
+      const state = getState();
+      if (state.inventory.length > 0) {
+        console.log(chalk.cyan(`Your inventory: ${state.inventory.join(', ')}`));
+      } else {
+        console.log(chalk.gray('Your inventory is empty.'));
+      }
+      continue;
+    }
+
+    if (action === 'save') {
+      await saveGame('.game-state/save.json');
+      console.log(chalk.green('Game saved to .game-state/save.json'));
+      continue;
+    }
+
+    if (action === 'load') {
+      await loadGame('.game-state/save.json');
+      console.log(chalk.green('Game loaded from .game-state/save.json'));
+      continue;
+    }
+
+    if (action.startsWith('take:')) {
+      const item = action.split(':')[1];
+      const itemIndex = room.items.indexOf(item);
+      if (itemIndex !== -1) {
+        room.items.splice(itemIndex, 1);
+        updateState({ inventory: [...state.inventory, item] });
+        console.log(chalk.green(`You took the ${item}.`));
+      } else {
+        console.log(chalk.red('Item not found here.'));
+      }
+      continue;
+    }
+
+    // Handle movement
+    const nextRoom = room.exits[action];
+    if (nextRoom) {
+      previousRoom = state.currentRoom;
+      updateState({ currentRoom: nextRoom });
+    } else {
+      console.log(chalk.red('Invalid direction!'));
+    }
+  }
+
+  // Auto-save after commands
+  await saveGame('.game-state/save.json');
+}
+
+function parseCommand(command: string): string | null {
+  const parts = command.toLowerCase().split(' ');
+  const cmd = parts[0];
+
+  if (cmd === 'go' && parts[1]) {
+    return parts[1];
+  }
+  if (cmd === 'take' && parts[1]) {
+    return `take:${parts[1]}`;
+  }
+  if (['inventory', 'save', 'load', 'quit'].includes(cmd)) {
+    return cmd;
+  }
+  if (['north', 'south', 'east', 'west'].includes(cmd)) {
+    return cmd;
+  }
+
+  return null;
+}
+
 function getDemoChoice(choices: any[], state: any, room: any): string {
   // Simple demo logic
   if (room.items && room.items.includes('torch')) {
@@ -86,10 +206,17 @@ async function doCombat(monster: { name: string; health: number; attack: number 
   }
 }
 
-export async function startGame(options: { demo?: boolean } = {}) {
+export async function startGame(options: { demo?: boolean; commands?: string[] } = {}) {
   console.clear();
   console.log(chalk.bold.green('=== Terminal Adventure ===\n'));
 
+  // Handle non-interactive commands
+  if (options.commands && options.commands.length > 0) {
+    await processCommands(options.commands);
+    return;
+  }
+
+  // Interactive mode
   let previousRoom = 'cave';
 
   while (true) {

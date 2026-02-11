@@ -187,7 +187,15 @@ function getDemoChoice(choices: any[], state: any, room: any): string {
 
 async function doCombat(monster: { name: string; health: number; attack: number }, options: { demo?: boolean } = {}) {
   let monsterHealth = monster.health;
-  console.log(chalk.red(`\nA ${monster.name} appears! Combat begins!`));
+  
+  // Monster-specific appearance messages
+  if (monster.name === 'Ancient Dragon') {
+    console.log(chalk.red(`\n🐉 A massive ${monster.name} blocks your path! Its scales gleam like molten gold and smoke curls from its nostrils. Combat begins!`));
+  } else if (monster.name === 'Ghost') {
+    console.log(chalk.magenta(`\n👻 A translucent ${monster.name} emerges from the shadows! Its ethereal form flickers with otherworldly energy. Combat begins!`));
+  } else {
+    console.log(chalk.red(`\nA ${monster.name} appears! Combat begins!`));
+  }
 
   while (monsterHealth > 0) {
     const state = getState();
@@ -213,12 +221,29 @@ async function doCombat(monster: { name: string; health: number; attack: number 
     }
 
     if (action === 'attack') {
-      const damage = randomDamage(1, 3);
+      let damage = randomDamage(1, 3);
+      
+      // Special monster behaviors
+      if (monster.name === 'Ghost') {
+        if (state.inventory.includes('ancient_key')) {
+          console.log(chalk.magenta('The ancient key glows brightly! The ghost becomes vulnerable!'));
+        } else {
+          damage = 0; // Ghost is immune without ancient_key
+          console.log(chalk.gray('Your attack passes through the ghost harmlessly. You need something special to defeat it!'));
+        }
+      }
+      
       monsterHealth -= damage;
-      console.log(chalk.green(`You attack the ${monster.name} for ${damage} damage!`));
+      if (damage > 0) {
+        console.log(chalk.green(`You attack the ${monster.name} for ${damage} damage!`));
+      }
 
       if (monsterHealth <= 0) {
-        console.log(chalk.green(`You defeated the ${monster.name}!`));
+        if (monster.name === 'Ghost') {
+          console.log(chalk.magenta('The ghost lets out a final wail and dissipates into mist!'));
+        } else {
+          console.log(chalk.green(`You defeated the ${monster.name}!`));
+        }
         return true; // Won
       }
 

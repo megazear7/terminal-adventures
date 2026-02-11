@@ -32,6 +32,7 @@ export const rooms: Record<string, Room> = {
     description: 'Golden light fills the room. You found the legendary treasure!',
     exits: { west: 'tunnel' },
     items: ['gold'],
+    monster: { name: 'Ancient Dragon', health: 20, attack: 5 },
     requiresLight: false,
   },
   cavern: {
@@ -48,6 +49,7 @@ export const rooms: Record<string, Room> = {
     description: 'A secret chamber hidden in the darkness. Ancient runes glow faintly.',
     exits: { west: 'cavern' },
     items: ['ancient_key'],
+    monster: { name: 'Ghost', health: 10, attack: 3 },
     requiresLight: true,
   },
 };

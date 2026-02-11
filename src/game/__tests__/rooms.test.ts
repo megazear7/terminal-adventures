@@ -13,7 +13,7 @@ describe('Rooms', () => {
     const cave = rooms.cave;
     expect(cave.id).toBe('cave');
     expect(cave.name).toBe('Dark Cave');
-    expect(cave.exits).toEqual({ north: 'forest', east: 'tunnel' });
+    expect(cave.exits).toEqual({ north: 'forest', east: 'tunnel', south: 'cavern' });
     expect(cave.items).toEqual(['torch']);
   });
 

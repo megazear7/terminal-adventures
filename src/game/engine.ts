@@ -7,6 +7,17 @@ function randomDamage(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function getRoomDescription(room: any, torchLit: boolean): string {
+  if (room.requiresLight && !torchLit) {
+    return "It's too dark to see anything clearly.";
+  }
+  return room.description;
+}
+
+function canSeeItems(room: any, torchLit: boolean): boolean {
+  return !room.requiresLight || torchLit;
+}
+
 async function processCommands(commands: string[]) {
   let previousRoom = 'cave';
 
@@ -15,10 +26,10 @@ async function processCommands(commands: string[]) {
     const room = rooms[state.currentRoom];
 
     console.log(chalk.bold.blue(`\n${room.name}`));
-    console.log(chalk.gray(room.description));
+    console.log(chalk.gray(getRoomDescription(room, state.torchLit)));
     console.log(chalk.cyan(`Your health: ${state.health}`));
 
-    if (room.items && room.items.length > 0) {
+    if (canSeeItems(room, state.torchLit) && room.items && room.items.length > 0) {
       console.log(chalk.yellow(`Items here: ${room.items.join(', ')}`));
     }
 
@@ -93,6 +104,21 @@ async function processCommands(commands: string[]) {
       continue;
     }
 
+    if (action.startsWith('use:')) {
+      const item = action.split(':')[1];
+      if (state.inventory.includes(item)) {
+        if (item === 'torch') {
+          updateState({ torchLit: !state.torchLit });
+          console.log(chalk.yellow(state.torchLit ? 'You light the torch. The area brightens!' : 'You extinguish the torch.'));
+        } else {
+          console.log(chalk.gray(`You can't use the ${item} here.`));
+        }
+      } else {
+        console.log(chalk.red(`You don't have a ${item}.`));
+      }
+      continue;
+    }
+
     // Handle movement
     const nextRoom = room.exits[action];
     if (nextRoom) {
@@ -116,6 +142,9 @@ function parseCommand(command: string): string | null {
   }
   if (cmd === 'take' && parts[1]) {
     return `take:${parts[1]}`;
+  }
+  if (cmd === 'use' && parts[1]) {
+    return `use:${parts[1]}`;
   }
   if (['inventory', 'save', 'load', 'quit'].includes(cmd)) {
     return cmd;
@@ -224,10 +253,10 @@ export async function startGame(options: { demo?: boolean; commands?: string[] }
     const room = rooms[state.currentRoom];
 
     console.log(chalk.bold.blue(`\n${room.name}`));
-    console.log(chalk.gray(room.description));
+    console.log(chalk.gray(getRoomDescription(room, state.torchLit)));
     console.log(chalk.cyan(`Your health: ${state.health}`));
 
-    if (room.items && room.items.length > 0) {
+    if (canSeeItems(room, state.torchLit) && room.items && room.items.length > 0) {
       console.log(chalk.yellow(`Items here: ${room.items.join(', ')}`));
     }
 
@@ -263,9 +292,16 @@ export async function startGame(options: { demo?: boolean; commands?: string[] }
     choices.push({ name: 'Check inventory', value: 'inventory' });
 
     // Add take options for items in room
-    if (room.items && room.items.length > 0) {
+    if (canSeeItems(room, state.torchLit) && room.items && room.items.length > 0) {
       room.items.forEach(item => {
         choices.push({ name: `Take ${item}`, value: `take:${item}` });
+      });
+    }
+
+    // Add use options for items in inventory
+    if (state.inventory.length > 0) {
+      state.inventory.forEach(item => {
+        choices.push({ name: `Use ${item}`, value: `use:${item}` });
       });
     }
 
@@ -359,6 +395,22 @@ export async function startGame(options: { demo?: boolean; commands?: string[] }
         console.log(chalk.green(`You took the ${item}.`));
       } else {
         console.log(chalk.red('Item not found here.'));
+      }
+      continue;
+    }
+
+    if (action.startsWith('use:')) {
+      const item = action.split(':')[1];
+      const state = getState();
+      if (state.inventory.includes(item)) {
+        if (item === 'torch') {
+          updateState({ torchLit: !state.torchLit });
+          console.log(chalk.yellow(state.torchLit ? 'You light the torch. The area brightens!' : 'You extinguish the torch.'));
+        } else {
+          console.log(chalk.gray(`You can't use the ${item} here.`));
+        }
+      } else {
+        console.log(chalk.red(`You don't have a ${item}.`));
       }
       continue;
     }

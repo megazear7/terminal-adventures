@@ -13,6 +13,7 @@ export const RoomSchema = z.object({
   exits: z.record(z.string(), z.string()), // direction -> roomId
   items: z.array(z.string()).optional().default([]),
   monster: MonsterSchema.optional(),
+  requiresLight: z.boolean(),
 });
 
 export const GameStateSchema = z.object({
@@ -20,6 +21,7 @@ export const GameStateSchema = z.object({
   inventory: z.array(z.string()).default([]),
   roomItems: z.record(z.string(), z.array(z.string())).default({}),
   health: z.number().default(10),
+  torchLit: z.boolean().default(false),
 });
 
 export type Room = z.infer<typeof RoomSchema>;

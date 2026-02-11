@@ -28,6 +28,16 @@ export async function startGame() {
       value: dir,
     }));
 
+    // Add inventory option
+    choices.push({ name: 'Check inventory', value: 'inventory' });
+
+    // Add take options for items in room
+    if (room.items && room.items.length > 0) {
+      room.items.forEach(item => {
+        choices.push({ name: `Take ${item}`, value: `take:${item}` });
+      });
+    }
+
     choices.push({ name: 'Quit', value: 'quit' });
 
     const { action } = await inquirer.prompt([
@@ -44,11 +54,37 @@ export async function startGame() {
       break;
     }
 
+    if (action === 'inventory') {
+      const state = getState();
+      if (state.inventory.length > 0) {
+        console.log(chalk.cyan(`Your inventory: ${state.inventory.join(', ')}`));
+      } else {
+        console.log(chalk.gray('Your inventory is empty.'));
+      }
+      continue; // Stay in the same room
+    }
+
+    if (action.startsWith('take:')) {
+      const item = action.split(':')[1];
+      const itemIndex = room.items.indexOf(item);
+      if (itemIndex !== -1) {
+        // Remove from room
+        room.items.splice(itemIndex, 1);
+        // Add to inventory
+        const state = getState();
+        updateState({ inventory: [...state.inventory, item] });
+        console.log(chalk.green(`You took the ${item}.`));
+      } else {
+        console.log(chalk.red('Item not found here.'));
+      }
+      continue;
+    }
+
     const nextRoom = room.exits[action];
     if (nextRoom) {
       updateState({ currentRoom: nextRoom });
     } else {
-      console.log(chalk.red('Invalid direction!'));
+      console.log(chalk.red('Invalid action!'));
     }
   }
 }

@@ -7,6 +7,37 @@ function randomDamage(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function levelUp() {
+  const state = getState();
+  const newLevel = state.player.level + 1;
+  const newMaxXp = Math.floor(state.player.maxXp * 1.5);
+  const newStrength = state.player.strength + 1;
+  const newDefense = state.player.defense + 1;
+  const newMaxHealth = state.player.maxHealth + 2;
+  const newAbilities = [...state.player.abilities];
+  if (newLevel === 2) newAbilities.push('Regeneration');
+  if (newLevel === 3) newAbilities.push('Critical Strike');
+  // Add more as needed
+
+  updateState({
+    player: {
+      level: newLevel,
+      xp: 0,
+      maxXp: newMaxXp,
+      strength: newStrength,
+      defense: newDefense,
+      maxHealth: newMaxHealth,
+      abilities: newAbilities,
+    },
+    health: Math.min(state.health + 2, newMaxHealth), // Heal on level up, but not over max
+  });
+  console.log(chalk.green(`\n🎉 Level up! You are now level ${newLevel}!`));
+  console.log(chalk.cyan(`Strength: ${newStrength}, Defense: ${newDefense}, Max Health: ${newMaxHealth}`));
+  if (newAbilities.length > state.player.abilities.length) {
+    console.log(chalk.magenta(`New ability unlocked: ${newAbilities[newAbilities.length - 1]}`));
+  }
+}
+
 function getRoomDescription(room: any, torchLit: boolean): string {
   if (room.requiresLight && !torchLit) {
     return "It's too dark to see anything clearly.";
@@ -27,7 +58,7 @@ async function processCommands(commands: string[]) {
 
     console.log(chalk.bold.blue(`\n${room.name}`));
     console.log(chalk.gray(getRoomDescription(room, state.torchLit)));
-    console.log(chalk.cyan(`Your health: ${state.health}`));
+    console.log(chalk.cyan(`Your health: ${state.health}/${state.player.maxHealth} | Level: ${state.player.level} | XP: ${state.player.xp}/${state.player.maxXp}`));
 
     if (canSeeItems(room, state.torchLit) && room.items && room.items.length > 0) {
       console.log(chalk.yellow(`Items here: ${room.items.join(', ')}`));
@@ -88,7 +119,7 @@ async function processCommands(commands: string[]) {
     const action = parseCommand(command);
     if (!action) {
       console.log(chalk.red(`Unknown command: ${command}`));
-      console.log(chalk.gray('Available commands: go <direction>, take <item>, inventory, save, load, quit'));
+      console.log(chalk.gray('Available commands: go <direction>, take <item>, use <item>, craft, inventory, save, load, quit'));
       continue;
     }
 
@@ -147,6 +178,17 @@ async function processCommands(commands: string[]) {
       continue;
     }
 
+    if (action === 'craft') {
+      const inventory = state.inventory;
+      if (inventory.includes('wood') && inventory.includes('stone')) {
+        updateState({ inventory: inventory.filter(i => i !== 'wood' && i !== 'stone').concat('axe') });
+        console.log(chalk.green('You crafted an axe using wood and stone!'));
+      } else {
+        console.log(chalk.gray('You need wood and stone to craft an axe.'));
+      }
+      continue;
+    }
+
     // Handle special movement cases
     if (action === 'south' && state.currentRoom === 'river') {
       if (state.inventory.includes('rope')) {
@@ -186,7 +228,7 @@ function parseCommand(command: string): string | null {
   if (cmd === 'use' && parts[1]) {
     return `use:${parts[1]}`;
   }
-  if (['inventory', 'save', 'load', 'quit'].includes(cmd)) {
+  if (['inventory', 'save', 'load', 'quit', 'craft'].includes(cmd)) {
     return cmd;
   }
   if (['north', 'south', 'east', 'west'].includes(cmd)) {
@@ -261,7 +303,7 @@ async function doCombat(monster: { name: string; health: number; attack: number 
     }
 
     if (action === 'attack') {
-      let damage = randomDamage(1, 3);
+      let damage = randomDamage(1, state.player.strength);
       
       // Special monster behaviors
       if (monster.name === 'Ghost') {
@@ -284,11 +326,23 @@ async function doCombat(monster: { name: string; health: number; attack: number 
         } else {
           console.log(chalk.green(`You defeated the ${monster.name}!`));
         }
+        // Gain XP
+        const xpGain = monster.health + monster.attack;
+        const newXp = state.player.xp + xpGain;
+        updateState({ player: { ...state.player, xp: newXp } });
+        console.log(chalk.blue(`You gained ${xpGain} XP!`));
+        // Check for level up
+        let currentState = getState();
+        while (currentState.player.xp >= currentState.player.maxXp) {
+          levelUp();
+          currentState = getState();
+        }
         return true; // Won
       }
 
       // Monster attacks
-      const monsterDamage = randomDamage(1, monster.attack);
+      const rawDamage = randomDamage(1, monster.attack);
+      const monsterDamage = Math.max(1, rawDamage - state.player.defense);
       updateState({ health: state.health - monsterDamage });
       console.log(chalk.red(`The ${monster.name} attacks you for ${monsterDamage} damage!`));
 
@@ -319,7 +373,7 @@ export async function startGame(options: { demo?: boolean; commands?: string[] }
 
     console.log(chalk.bold.blue(`\n${room.name}`));
     console.log(chalk.gray(getRoomDescription(room, state.torchLit)));
-    console.log(chalk.cyan(`Your health: ${state.health}`));
+    console.log(chalk.cyan(`Your health: ${state.health}/${state.player.maxHealth} | Level: ${state.player.level} | XP: ${state.player.xp}/${state.player.maxXp}`));
 
     if (canSeeItems(room, state.torchLit) && room.items && room.items.length > 0) {
       console.log(chalk.yellow(`Items here: ${room.items.join(', ')}`));

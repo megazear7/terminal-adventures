@@ -14,7 +14,7 @@ export const rooms: Record<string, Room> = {
     name: 'Mysterious Forest',
     description: 'Tall trees surround you. Sunlight filters through the leaves.',
     exits: { south: 'cave', east: 'clearing' },
-    items: [],
+    items: ['wood'],
     requiresLight: false,
   },
   tunnel: {
@@ -40,7 +40,7 @@ export const rooms: Record<string, Room> = {
     name: 'Dark Cavern',
     description: 'This cavern is pitch black. You can barely see anything without light.',
     exits: { north: 'cave', east: 'hidden' },
-    items: [],
+    items: ['stone'],
     requiresLight: true,
   },
   hidden: {

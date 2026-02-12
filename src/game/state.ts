@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs';
-import { GameState, GameStateSchema } from './types.js';
+import { mkdir } from 'fs/promises';
+import { dirname } from 'path';
+import { GameState, GameStateSchema, PlayerSchema } from './types.js';
 import { rooms } from './rooms.js';
 
 let state: GameState = {
@@ -8,6 +10,7 @@ let state: GameState = {
   roomItems: {},
   health: 10,
   torchLit: false,
+  player: PlayerSchema.parse({}),
 };
 
 export function getState(): GameState {
@@ -24,11 +27,13 @@ export function resetState() {
   for (const [id, room] of Object.entries(rooms)) {
     initialRoomItems[id] = [...(room.items || [])];
   }
-  state = { currentRoom: 'cave', inventory: [], roomItems: initialRoomItems, health: 10, torchLit: false };
+  state = { currentRoom: 'cave', inventory: [], roomItems: initialRoomItems, health: 10, torchLit: false, player: PlayerSchema.parse({}) };
   // Also set the rooms items
   for (const [id, items] of Object.entries(initialRoomItems)) {
     rooms[id].items = [...items];
   }
+  // Set health to maxHealth
+  updateState({ health: state.player.maxHealth });
 }
 
 export async function saveGame(filePath: string = '.game-state/save.json') {
@@ -39,6 +44,7 @@ export async function saveGame(filePath: string = '.game-state/save.json') {
     currentRoomItems[id] = [...(room.items || [])];
   }
   stateToSave.roomItems = currentRoomItems;
+  await mkdir(dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(stateToSave, null, 2));
 }
 
